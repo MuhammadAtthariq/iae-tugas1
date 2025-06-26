@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreeToGame Browser</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-6xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">🎮 FreeToGame Explorer</h1>
+
+    <!-- Filters -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <input id="searchInput" type="text" placeholder="Search by category/tag (e.g. shooter)" class="p-2 rounded border border-gray-300 w-full" />
+
+      <select id="platformSelect" class="p-2 rounded border border-gray-300 w-full">
+        <option value="">All Platforms</option>
+        <option value="pc">PC</option>
+        <option value="browser">Browser</option>
+      </select>
+
+      <select id="sortSelect" class="p-2 rounded border border-gray-300 w-full">
+        <option value="">Default Sort</option>
+        <option value="alphabetical">Alphabetical</option>
+        <option value="release-date">Release Date</option>
+        <option value="popularity">Popularity</option>
+        <option value="relevance">Relevance</option>
+      </select>
+    </div>
+
+    <!-- Search Button -->
+    <div class="mb-6 text-center">
+      <button onclick="fetchGames()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+        🔍 Search Games
+      </button>
+    </div>
+
+    <!-- Results -->
+    <div id="gamesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Game Cards Appear Here -->
+    </div>
+  </div>
+
+  <script>
+    // Ubah baris ini untuk menunjuk ke server proxy lokalmu
+    const API_BASE = 'http://localhost:3000/api/games'; // Pastikan portnya sesuai (defaultnya 3000)
+
+    async function fetchGames() {
+        const search = document.getElementById('searchInput').value.trim();
+        const platform = document.getElementById('platformSelect').value;
+        const sort = document.getElementById('sortSelect').value;
+
+        let url = `${API_BASE}`;
+        const params = [];
+
+        // Perhatikan: nama parameter di sini harus sesuai dengan yang ditangani oleh server proxy-mu
+        // yang juga sesuai dengan parameter API FreeToGame.
+        if (search) params.push(`category=${encodeURIComponent(search)}`);
+        if (platform) params.push(`platform=${platform}`);
+        if (sort) params.push(`sort-by=${sort}`);
+
+        if (params.length > 0) {
+        url += '?' + params.join('&');
+        }
+
+        try {
+        const res = await fetch(url);
+        // Penting: Periksa apakah responsnya OK sebelum mencoba .json()
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const games = await res.json();
+        displayGames(games);
+        } catch (error) {
+        console.error('Gagal mengambil game:', error);
+        document.getElementById('gamesContainer').innerHTML = '<p class="text-red-600">Gagal memuat game. Silakan coba lagi.</p>';
+        }
+    }
+
+    function displayGames(games) {
+        const container = document.getElementById('gamesContainer');
+        container.innerHTML = '';
+
+        if (!games || games.length === 0) {
+        container.innerHTML = '<p class="text-gray-600">Tidak ada game yang ditemukan.</p>';
+        return;
+        }
+
+        games.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'bg-white shadow-md rounded overflow-hidden';
+        card.innerHTML = `
+            <img src="${game.thumbnail}" alt="${game.title}" class="w-full h-40 object-cover">
+            <div class="p-4">
+            <h2 class="text-lg font-bold mb-2">${game.title}</h2>
+            <p class="text-sm text-gray-600 mb-1">Genre: ${game.genre}</p>
+            <p class="text-sm text-gray-600 mb-1">Platform: ${game.platform}</p>
+            <p class="text-sm text-gray-600 mb-2">Rilis: ${game.release_date}</p>
+            <a href="${game.game_url}" target="_blank" class="text-blue-600 hover:underline text-sm">Lihat Game →</a>
+            </div>
+        `;
+        container.appendChild(card);
+        });
+    }
+
+    // Panggilan awal untuk memuat game saat halaman dimuat
+    fetchGames();
+</script>
+</body>
+</html
